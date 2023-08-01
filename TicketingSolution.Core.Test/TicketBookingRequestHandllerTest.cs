@@ -6,7 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TicketingSolution.Core.DataServices;
-using TicketingSolution.Core.Domain;
+using TicketingSolution.Core.Enums;
+using TicketingSolution.Core.Handller;
+using TicketingSolution.Core.Model;
+using TicketingSolution.Domain.Domain;
 using Xunit;
 
 namespace TicketingSolution.Core.Test
@@ -26,7 +29,7 @@ namespace TicketingSolution.Core.Test
                 Name = "Test Name",
                 Family = "Test Family",
                 Email = "TestEmail@gmail.com",
-                Date= DateTime.Now
+                Date = DateTime.Now
 
             };
 
@@ -84,7 +87,7 @@ namespace TicketingSolution.Core.Test
             _handller.BookService(_Request);
 
 
-            _tickectBookingServiceMock.Verify(x=>x.Save(It.IsAny<TicketBooking>()), Times.Once);
+            _tickectBookingServiceMock.Verify(x => x.Save(It.IsAny<TicketBooking>()), Times.Once);
             saveBooking.ShouldNotBeNull();
             saveBooking.Name.ShouldBe(_Request.Name);
             saveBooking.Family.ShouldBe(_Request.Family);
@@ -98,6 +101,40 @@ namespace TicketingSolution.Core.Test
             _availableTickets.Clear();
             _handller.BookService(_Request);
             _tickectBookingServiceMock.Verify(x => x.Save(It.IsAny<TicketBooking>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(BookingResultFlag.Failure, false)]
+        [InlineData(BookingResultFlag.Success, true)]
+        public void ShouldReturnSuccessOrFailureFlagInResult(BookingResultFlag bookingSuccessFlag, bool isAvailable)
+        {
+            if (!isAvailable)
+            {
+                _availableTickets.Clear();
+            }
+            var result = _handller.BookService(_Request);
+            bookingSuccessFlag.ShouldBe(result.Flag);
+        }
+
+        [Theory]
+        [InlineData(1, true)]
+        [InlineData(null, false)]
+        public void ShouldReturnTicketBookingInResult(int? tickectBookingId, bool isAvailable)
+        {
+            if (!isAvailable)
+            {
+                _availableTickets.Clear();
+            }
+            else
+            {
+                _tickectBookingServiceMock.Setup(x => x.Save(It.IsAny<TicketBooking>()))
+                  .Callback<TicketBooking>(x =>
+                  {
+                      TicketBooking.Id = tickectBookingId.Value;
+                  });
+            }
+            var result = _handller.BookService(_Request);
+            result.TicketBookingId.ShouldBe(tickectBookingId);
         }
     }
 }

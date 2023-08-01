@@ -1,6 +1,8 @@
-﻿namespace TicketingSolution.Core.Test
+﻿using TicketingSolution.Domain.BaseModels;
+
+namespace TicketingSolution.Core.Model
 {
-    public class TicketBookingRequest: ServiceBookingBase
+    public class TicketBookingRequest : ServiceBookingBase
     {
 
     }

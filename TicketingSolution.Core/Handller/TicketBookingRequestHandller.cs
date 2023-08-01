@@ -1,8 +1,10 @@
 ﻿using System;
 using TicketingSolution.Core.DataServices;
-using TicketingSolution.Core.Domain;
+using TicketingSolution.Core.Model;
+using TicketingSolution.Domain.BaseModels;
+using TicketingSolution.Domain.Domain;
 
-namespace TicketingSolution.Core.Test
+namespace TicketingSolution.Core.Handller
 {
     public class TicketBookingRequestHandller
     {
@@ -10,7 +12,7 @@ namespace TicketingSolution.Core.Test
 
         public TicketBookingRequestHandller(ITicketBookingService ticketBookingService)
         {
-            this._ticketBookingService = ticketBookingService;
+            _ticketBookingService = ticketBookingService;
         }
 
         public ServiceBookingResult BookService(TicketBookingRequest bookingReqest)
@@ -20,17 +22,24 @@ namespace TicketingSolution.Core.Test
                 throw new ArgumentNullException(nameof(bookingReqest));
             }
             var availableTicket = _ticketBookingService.GetAcailableTickects(bookingReqest.Date);
+            var result = CreateTicketBookingObject<ServiceBookingResult>(bookingReqest);
             if (availableTicket.Any())
             {
                 var Ticket = availableTicket.First();
                 var TickectBooking = CreateTicketBookingObject<TicketBooking>(bookingReqest);
                 TickectBooking.TickectID = Ticket.Id;
                 _ticketBookingService.Save(TickectBooking);
+                result.Flag = Enums.BookingResultFlag.Success;
+                result.TicketBookingId = TickectBooking.TickectID;
+            }
+            else
+            {
+                result.Flag = Enums.BookingResultFlag.Failure;
             }
 
-            return CreateTicketBookingObject<ServiceBookingResult>(bookingReqest);
+            return result;
         }
-        private static ITicketBooking CreateTicketBookingObject<ITicketBooking>(TicketBookingRequest bookingReqest) where ITicketBooking 
+        private static ITicketBooking CreateTicketBookingObject<ITicketBooking>(TicketBookingRequest bookingReqest) where ITicketBooking
             : ServiceBookingBase, new()
         {
             return new ITicketBooking
@@ -39,6 +48,6 @@ namespace TicketingSolution.Core.Test
                 Family = bookingReqest.Family,
                 Email = bookingReqest.Email,
             };
-       }
+        }
     }
 }
